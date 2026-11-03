@@ -1,0 +1,106 @@
+[
+  {
+    "slug": "immigration-services",
+    "name": "Immigration",
+    "category": "individual",
+    "tag": "Live & work in Cayman",
+    "description": "Find your way through work permits, residency and life in the Cayman Islands.",
+    "intro": "Personal support for your next chapter in the Cayman Islands, from work permit applications to residency matters.",
+    "items": [
+      "Work permit grants and renewals",
+      "Temporary work permits and extensions",
+      "Residency and Employment Rights Certificates",
+      "Right to be Caymanian applications",
+      "Residency for persons of independent means"
+    ],
+    "icon": "globe"
+  },
+  {
+    "slug": "visa-services",
+    "name": "Visa services",
+    "category": "individual",
+    "tag": "Travel with a clearer plan",
+    "description": "Personal guidance for your travel plans, documents and visa application.",
+    "intro": "Whether you are planning a visit or exploring opportunities abroad, start with a clearer understanding of your visa application.",
+    "items": [
+      "Canada",
+      "Jamaica",
+      "Cayman Islands",
+      "United Kingdom",
+      "United States of America"
+    ],
+    "icon": "plane"
+  },
+  {
+    "slug": "passport-services",
+    "name": "Passport services",
+    "category": "individual",
+    "tag": "Your next journey starts here",
+    "description": "Support with Cayman Islands and British passport applications.",
+    "intro": "Get personal assistance with your passport application and the documents you need for your next journey.",
+    "items": ["Cayman Islands passport", "British passport"],
+    "icon": "passport"
+  },
+  {
+    "slug": "corporate-services",
+    "name": "Corporate services",
+    "category": "business",
+    "tag": "Build your business",
+    "description": "Practical support to establish and manage your business in the Cayman Islands.",
+    "intro": "From company formation to ongoing administration, bring your business needs together with one dedicated point of contact.",
+    "items": [
+      "Company incorporation and limited partnerships",
+      "Corporate bank account assistance",
+      "Trade and business licences and amendments",
+      "Annual returns and certificates of good standing",
+      "Company searches and sole trader setup",
+      "Health insurance and pension applications"
+    ],
+    "icon": "building"
+  },
+  {
+    "slug": "naturalization-services",
+    "name": "Naturalization",
+    "category": "individual",
+    "tag": "Take the next step",
+    "description": "Guidance for British Overseas Territories citizenship and British registration.",
+    "intro": "Navigate the paperwork for your citizenship journey with support tailored to your circumstances.",
+    "items": [
+      "British Overseas Territories Citizen (BOTC) applications",
+      "British registration",
+      "Discuss applications based on marriage, residence or registration of a child"
+    ],
+    "icon": "leaf"
+  },
+  {
+    "slug": "notary-public-justice-of-the-peace",
+    "name": "Notary & Justice of the Peace",
+    "category": "documents",
+    "tag": "Documents, carefully handled",
+    "description": "Assistance with affidavits, authentication and important personal documents.",
+    "intro": "Bring clarity to your documentation needs with notary and Justice of the Peace services.",
+    "items": [
+      "Affidavits and apostilles",
+      "Corporate and legal documents",
+      "Travel consent letters",
+      "Testaments",
+      "Enquire about mobile and remote services"
+    ],
+    "icon": "pen"
+  },
+  {
+    "slug": "administrative-assistance-package",
+    "name": "Administrative assistance",
+    "category": "business",
+    "tag": "More time for what matters",
+    "description": "Coordinated packages for business administration and personal applications.",
+    "intro": "Choose coordinated administrative support that brings related tasks together around your needs.",
+    "items": [
+      "Corporate package: banking, health insurance, pension and work permit administration",
+      "Standard package: advertising, work permits, passport stamping and data filing",
+      "Naturalization package: citizenship and passport support",
+      "Comprehensive package: residency, citizenship, passports and Cayman status"
+    ],
+    "icon": "file"
+  }
+]
