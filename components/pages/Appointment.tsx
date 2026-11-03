@@ -45,11 +45,11 @@ export default function Appointment() {
           <div className="contact-row">
             <span className="eyebrow">Visit us</span>
             <p>
-              3rd Floor, Amerigo House
+              Unit 3C, Grand Cayman, 80 Shedden Road,
               <br />
-              Elizabethan Square, 80 Shedden Road
+              Elizabethan Square, Amerigo House,
               <br />
-              George Town, Cayman Islands
+              KY1-1503, Cayman Islands
             </p>
             <a
               className="text-link"
@@ -57,7 +57,7 @@ export default function Appointment() {
               target="_blank"
               rel="noopener"
               href={
-                "https://www.google.com/maps/search/?api=1&query=Amerigo+House+Elizabethan+Square+George+Town+Cayman+Islands"
+                "https://www.google.com/maps/dir/?api=1&destination=19.2940755%2C-81.3798832"
               }
             >
               Get directions ↗
@@ -75,7 +75,7 @@ export default function Appointment() {
               Is my appointment confirmed when I complete this form?
             </summary>
             <p>
-              No. This form opens a draft in your email app. Send it to the
+              No. This form opens a Gmail draft. Send it to the
               team, who will respond to confirm availability.
             </p>
           </details>

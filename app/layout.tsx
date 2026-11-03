@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(origin),
   title: "D’ Embassy",
   description: "Personal guidance in the Cayman Islands.",
-  icons: { icon: { url: "/assets/logo.jpg", type: "image/jpeg" } },
+  icons: { icon: { url: "/assets/logodembassy.jpg", type: "image/jpeg" } },
 };
 
 export default function RootLayout({
@@ -26,8 +26,9 @@ export default function RootLayout({
     address: {
       "@type": "PostalAddress",
       streetAddress:
-        "3rd Floor, Amerigo House, Elizabethan Square, 80 Shedden Road",
-      addressLocality: "George Town",
+        "Unit 3C, Grand Cayman, 80 Shedden Road, Elizabethan Square, Amerigo House",
+      addressLocality: "Grand Cayman",
+      postalCode: "KY1-1503",
       addressCountry: "KY",
     },
   };

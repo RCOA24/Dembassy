@@ -24,11 +24,11 @@ export function Footer() {
         <div>
           <span className="eyebrow">Find us</span>
           <p>
-            Amerigo House, Elizabethan Square
+            Unit 3C, Grand Cayman, 80 Shedden Road, 
             <br />
-            80 Shedden Road, George Town
+            Elizabethan Square, Amerigo House, 
             <br />
-            Cayman Islands
+            KY1-1503, Cayman Islands
           </p>
         </div>
       </div>

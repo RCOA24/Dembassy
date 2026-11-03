@@ -12,6 +12,11 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 110px;
+  overflow-x: clip;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
 }
 body {
   margin: 0;

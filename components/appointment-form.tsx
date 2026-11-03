@@ -27,16 +27,13 @@ function createDraft(form: HTMLFormElement) {
   return {
     subject,
     body,
-    url: `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
   };
 }
 
 export function AppointmentForm() {
   const [service, setService] = useState("");
   const [minimumDate, setMinimumDate] = useState("");
-  const [draftUrl, setDraftUrl] = useState("");
-  const [copyStatus, setCopyStatus] = useState("");
-  const [fallback, setFallback] = useState("");
+  const [draftPrepared, setDraftPrepared] = useState(false);
 
   useEffect(() => {
     const selected = new URLSearchParams(window.location.search).get("service");
@@ -54,32 +51,17 @@ export function AppointmentForm() {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const { url } = createDraft(event.currentTarget);
-    setDraftUrl(url);
-    window.location.href = url;
-  }
-
-  async function copyDetails(form: HTMLFormElement) {
-    if (!form.reportValidity()) return;
-    const { subject, body } = createDraft(form);
-    const text = `To: ${recipient}\nSubject: ${subject}\n\n${body}`;
-    try {
-      await navigator.clipboard.writeText(text);
-      setFallback("");
-      setCopyStatus(
-        "Details copied. Paste them into an email and send it to admin@dembassy.ky.",
-      );
-    } catch {
-      setFallback(text);
-      setCopyStatus("Select and copy the details below into your email.");
-    }
+    const { subject, body } = createDraft(event.currentTarget);
+    setDraftPrepared(true);
+    const params = new URLSearchParams({ view: "cm", fs: "1", to: recipient, su: subject, body });
+    window.open(`https://mail.google.com/mail/?${params}`, "_blank", "noopener,noreferrer");
   }
 
   return (
     <form id="appointment-form" className="form-panel" onSubmit={submit}>
       <h2>Request an appointment</h2>
       <p>
-        This form opens a draft in your email app. Review and manually send it.
+        Open your Gmail draft, then review and send it.
         The team will respond to confirm availability.
       </p>
       <div className="form-row">
@@ -151,35 +133,12 @@ export function AppointmentForm() {
         initial enquiry. Preferred times are in Cayman Islands time.
       </p>
       <button className="button" type="submit">
-        Prepare email request <span aria-hidden="true">↗</span>
-      </button>{" "}
-      <button
-        className="button outline"
-        type="button"
-        onClick={(event) => {
-          if (event.currentTarget.form)
-            void copyDetails(event.currentTarget.form);
-        }}
-      >
-        Copy appointment details
+        Send a Message <span aria-hidden="true">↗</span>
       </button>
-      <p role="status">{copyStatus}</p>
-      {fallback && (
-        <textarea
-          aria-label="Appointment details to copy"
-          readOnly
-          value={fallback}
-          onFocus={(event) => event.currentTarget.select()}
-        />
-      )}
-      {draftUrl && (
+      {draftPrepared && (
         <div className="form-message" role="status">
-          If your email app opened, review and send the draft. Nothing has been
-          submitted through this website. If it did not open, try again or copy
-          the details.{" "}
-          <a href={draftUrl} style={{ textDecoration: "underline" }}>
-            Open email draft ↗
-          </a>
+          Review and send the draft in Gmail. Your request is not sent until
+          you send the email. If Gmail did not open, check your browser’s pop-up settings.
         </div>
       )}
     </form>
