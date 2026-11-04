@@ -5,6 +5,7 @@ import { services } from "../lib/site";
 import appointmentOptions from "../public/api/appointment-options.json";
 
 type ApiResponse = { ok: boolean; message: string };
+type ActiveRequest = { controller: AbortController; timer: ReturnType<typeof setTimeout>; cancelled: boolean; timedOut: boolean };
 
 function isApiResponse(value: unknown): value is ApiResponse {
   if (typeof value !== "object" || value === null) return false;
@@ -17,6 +18,7 @@ export function AppointmentForm() {
   const [minimumDate, setMinimumDate] = useState("");
   const [sending, setSending] = useState(false);
   const submitting = useRef(false);
+  const activeRequest = useRef<ActiveRequest | null>(null);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
@@ -27,6 +29,15 @@ export function AppointmentForm() {
     }).formatToParts(new Date());
     const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "";
     setMinimumDate(`${part("year")}-${part("month")}-${part("day")}`);
+  }, []);
+
+  useEffect(() => () => {
+    const request = activeRequest.current;
+    if (request) {
+      request.cancelled = true;
+      clearTimeout(request.timer);
+      request.controller.abort();
+    }
   }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -43,14 +54,31 @@ export function AppointmentForm() {
     submitting.current = true;
     setSending(true);
     setResult(null);
+    const controller = new AbortController();
+    const request: ActiveRequest = {
+      controller,
+      cancelled: false,
+      timedOut: false,
+      timer: setTimeout(() => {
+        request.timedOut = true;
+        controller.abort();
+      }, 30_000),
+    };
+    activeRequest.current = request;
 
     try {
       const response = await fetch("/api/appointment.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        signal: controller.signal,
       });
-      const payload: unknown = await response.json().catch(() => null);
+      const payload: unknown = await response.json().catch((error: unknown) => {
+        if (controller.signal.aborted) throw error;
+        return null;
+      });
+      if (request.cancelled) return;
+      if (request.timedOut) throw new DOMException("Request timed out", "AbortError");
       if (!isApiResponse(payload) || payload.ok !== response.ok) {
         throw new Error("The server returned an unexpected response. Please try again or contact us directly.");
       }
@@ -62,14 +90,19 @@ export function AppointmentForm() {
       setService("");
       setResult({ ok: true, message: "Your request was accepted for delivery. A copy was sent to your email address. The team will reply to confirm availability." });
     } catch (error) {
-      setResult({
-        ok: false,
-        message: error instanceof TypeError ? "We could not connect. Please check your connection and try again." :
-          error instanceof Error ? error.message : "Your request could not be sent. Please try again.",
-      });
+      if (!request.cancelled) {
+        setResult({
+          ok: false,
+          message: request.timedOut ? "Your request timed out. It may have been received by our team. Please contact us before submitting again to avoid sending a duplicate request." :
+            error instanceof TypeError ? "We could not connect. Please check your connection and try again." :
+              error instanceof Error ? error.message : "Your request could not be sent. Please try again.",
+        });
+      }
     } finally {
-      setSending(false);
+      clearTimeout(request.timer);
+      if (!request.cancelled) setSending(false);
       submitting.current = false;
+      if (activeRequest.current === request) activeRequest.current = null;
     }
   }
 
