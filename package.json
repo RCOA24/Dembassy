@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint app components lib --ext .ts,.tsx"
+    "lint": "eslint app components lib --ext .ts,.tsx",
+    "test:appointment": "node --test tests/appointment-api.test.cjs"
   },
   "dependencies": {
     "next": "^15.5.0",

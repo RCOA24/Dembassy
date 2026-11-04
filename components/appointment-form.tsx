@@ -1,28 +1,46 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { services } from "../lib/site";
+import appointmentOptions from "../public/api/appointment-options.json";
+
+type ApiResponse = { ok: boolean; message: string };
+
+function isApiResponse(value: unknown): value is ApiResponse {
+  if (typeof value !== "object" || value === null) return false;
+  const response = value as Record<string, unknown>;
+  return typeof response.ok === "boolean" && typeof response.message === "string" && response.message.length > 0;
+}
 
 export function AppointmentForm() {
   const [service, setService] = useState("");
   const [minimumDate, setMinimumDate] = useState("");
   const [sending, setSending] = useState(false);
+  const submitting = useRef(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
     const selected = new URLSearchParams(window.location.search).get("service");
     if (services.some((item) => item.name === selected)) setService(selected ?? "");
-    setMinimumDate(new Intl.DateTimeFormat("en-CA", {
+    const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Cayman", year: "numeric", month: "2-digit", day: "2-digit",
-    }).format(new Date()));
+    }).formatToParts(new Date());
+    const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "";
+    setMinimumDate(`${part("year")}-${part("month")}-${part("day")}`);
   }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (sending) return;
+    if (submitting.current) return;
 
     const form = event.currentTarget;
-    const data = Object.fromEntries(new FormData(form).entries());
+    const formData = new FormData(form);
+    const field = (name: string) => String(formData.get(name) ?? "");
+    const data = {
+      name: field("name"), email: field("email"), service: field("service"),
+      date: field("date"), time: field("time"), message: field("message"), website: field("website"),
+    };
+    submitting.current = true;
     setSending(true);
     setResult(null);
 
@@ -32,21 +50,26 @@ export function AppointmentForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      const payload = await response.json().catch(() => null) as { message?: string } | null;
-      if (!response.ok || !payload?.message) {
-        throw new Error(payload?.message || "Your request could not be sent. Please try again.");
+      const payload: unknown = await response.json().catch(() => null);
+      if (!isApiResponse(payload) || payload.ok !== response.ok) {
+        throw new Error("The server returned an unexpected response. Please try again or contact us directly.");
+      }
+      if (!response.ok) {
+        throw new Error(payload.message);
       }
 
       form.reset();
       setService("");
-      setResult({ ok: true, message: "Your request was sent. We emailed you a copy and will reply to confirm availability." });
+      setResult({ ok: true, message: "Your request was accepted for delivery. A copy was sent to your email address. The team will reply to confirm availability." });
     } catch (error) {
       setResult({
         ok: false,
-        message: error instanceof Error ? error.message : "Your request could not be sent. Please try again.",
+        message: error instanceof TypeError ? "We could not connect. Please check your connection and try again." :
+          error instanceof Error ? error.message : "Your request could not be sent. Please try again.",
       });
     } finally {
       setSending(false);
+      submitting.current = false;
     }
   }
 
@@ -69,7 +92,7 @@ export function AppointmentForm() {
         <select name="service" id="appointment-service" required value={service} onChange={(event) => setService(event.target.value)}>
           <option value="">Choose a service</option>
           {services.map((item) => <option key={item.slug}>{item.name}</option>)}
-          <option>I’m not sure yet</option>
+          <option>{appointmentOptions.otherService}</option>
         </select>
       </label>
       <div className="form-row">
@@ -80,9 +103,7 @@ export function AppointmentForm() {
         <label>
           Preferred time of day
           <select name="time">
-            <option>Morning</option>
-            <option>Afternoon</option>
-            <option>No preference</option>
+            {appointmentOptions.times.map((time) => <option key={time}>{time}</option>)}
           </select>
         </label>
       </div>
