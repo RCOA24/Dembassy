@@ -3,113 +3,79 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { services } from "../lib/site";
 
-const recipient = "admin@dembassy.ky";
-
-function createDraft(form: HTMLFormElement) {
-  const data = new FormData(form);
-  const field = (name: string) => String(data.get(name) ?? "").trim();
-  const subject = `Appointment request — ${field("service")}`;
-  const body = [
-    "Hello D’ Embassy,",
-    "",
-    "I would like to request an appointment.",
-    "",
-    `Name: ${field("name")}`,
-    `Email: ${field("email")}`,
-    `Service: ${field("service")}`,
-    `Preferred date: ${field("date")}`,
-    `Preferred time: ${field("time")} (Cayman Islands time)`,
-    "",
-    field("message"),
-    "",
-    "Please confirm availability. Thank you.",
-  ].join("\n");
-  return {
-    subject,
-    body,
-  };
-}
-
 export function AppointmentForm() {
   const [service, setService] = useState("");
   const [minimumDate, setMinimumDate] = useState("");
-  const [draftPrepared, setDraftPrepared] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
     const selected = new URLSearchParams(window.location.search).get("service");
-    if (services.some((item) => item.name === selected))
-      setService(selected ?? "");
-    setMinimumDate(
-      new Intl.DateTimeFormat("en-CA", {
-        timeZone: "America/Cayman",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).format(new Date()),
-    );
+    if (services.some((item) => item.name === selected)) setService(selected ?? "");
+    setMinimumDate(new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Cayman", year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date()));
   }, []);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const { subject, body } = createDraft(event.currentTarget);
-    setDraftPrepared(true);
-    const params = new URLSearchParams({ view: "cm", fs: "1", to: recipient, su: subject, body });
-    window.open(`https://mail.google.com/mail/?${params}`, "_blank", "noopener,noreferrer");
+    if (sending) return;
+
+    const form = event.currentTarget;
+    const data = Object.fromEntries(new FormData(form).entries());
+    setSending(true);
+    setResult(null);
+
+    try {
+      const response = await fetch("/api/appointment.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const payload = await response.json().catch(() => null) as { message?: string } | null;
+      if (!response.ok || !payload?.message) {
+        throw new Error(payload?.message || "Your request could not be sent. Please try again.");
+      }
+
+      form.reset();
+      setService("");
+      setResult({ ok: true, message: "Your request was sent. We emailed you a copy and will reply to confirm availability." });
+    } catch (error) {
+      setResult({
+        ok: false,
+        message: error instanceof Error ? error.message : "Your request could not be sent. Please try again.",
+      });
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
     <form id="appointment-form" className="form-panel" onSubmit={submit}>
       <h2>Request an appointment</h2>
-      <p>
-        Open your Gmail draft, then review and send it.
-        The team will respond to confirm availability.
-      </p>
+      <p>Send your request to our team. You will receive a copy by email, and we will reply to confirm availability.</p>
       <div className="form-row">
         <label>
           Your name
-          <input
-            required
-            name="name"
-            autoComplete="name"
-            placeholder="Full name"
-          />
+          <input required name="name" autoComplete="name" placeholder="Full name" maxLength={120} />
         </label>
         <label>
           Email address
-          <input
-            required
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-          />
+          <input required name="email" type="email" autoComplete="email" placeholder="you@example.com" maxLength={254} />
         </label>
       </div>
       <label>
         What can we help with?
-        <select
-          name="service"
-          id="appointment-service"
-          required
-          value={service}
-          onChange={(event) => setService(event.target.value)}
-        >
+        <select name="service" id="appointment-service" required value={service} onChange={(event) => setService(event.target.value)}>
           <option value="">Choose a service</option>
-          {services.map((item) => (
-            <option key={item.slug}>{item.name}</option>
-          ))}
+          {services.map((item) => <option key={item.slug}>{item.name}</option>)}
           <option>I’m not sure yet</option>
         </select>
       </label>
       <div className="form-row">
         <label>
           Preferred date
-          <input
-            name="date"
-            type="date"
-            required
-            min={minimumDate || undefined}
-          />
+          <input name="date" type="date" required min={minimumDate || undefined} />
         </label>
         <label>
           Preferred time of day
@@ -121,26 +87,19 @@ export function AppointmentForm() {
         </label>
       </div>
       <label>
-        Anything you’d like us to know?{" "}
-        <span style={{ fontWeight: 400 }}>(optional)</span>
-        <textarea
-          name="message"
-          placeholder="A brief description of the support you need"
-        />
+        Anything you’d like us to know? <span style={{ fontWeight: 400 }}>(optional)</span>
+        <textarea name="message" placeholder="A brief description of the support you need" maxLength={3000} />
       </label>
+      <div style={{ position: "absolute", left: "-10000px" }} aria-hidden="true">
+        <label>Leave this field empty<input name="website" tabIndex={-1} autoComplete="off" /></label>
+      </div>
       <p style={{ fontSize: 11 }}>
-        Please leave passport numbers and other sensitive documents out of this
-        initial enquiry. Preferred times are in Cayman Islands time.
+        Please leave passport numbers and other sensitive documents out of this initial enquiry. Preferred times are in Cayman Islands time.
       </p>
-      <button className="button" type="submit">
-        Send a Message <span aria-hidden="true">↗</span>
+      <button className="button" type="submit" disabled={sending}>
+        {sending ? "Sending…" : "Send a Message"} <span aria-hidden="true">↗</span>
       </button>
-      {draftPrepared && (
-        <div className="form-message" role="status">
-          Review and send the draft in Gmail. Your request is not sent until
-          you send the email. If Gmail did not open, check your browser’s pop-up settings.
-        </div>
-      )}
+      {result && <div className="form-message" role={result.ok ? "status" : "alert"}>{result.message}</div>}
     </form>
   );
 }

@@ -5,4 +5,5 @@ dist/
 out/
 *.tsbuildinfo
 .env*
+server/vendor/
 FILE_MANIFEST.json

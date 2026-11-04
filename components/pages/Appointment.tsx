@@ -17,8 +17,8 @@ export default function Appointment() {
             <em>Let’s talk about it.</em>
           </h1>
           <p>
-            Tell us what you need help with and prepare an appointment request
-            for our team.
+            Tell us what you need help with and send an appointment request
+            to our team.
           </p>
         </div>
       </section>
@@ -75,8 +75,8 @@ export default function Appointment() {
               Is my appointment confirmed when I complete this form?
             </summary>
             <p>
-              No. This form opens a Gmail draft. Send it to the
-              team, who will respond to confirm availability.
+              No. The form sends your request to our team and emails you a copy.
+              The team will respond to confirm availability.
             </p>
           </details>
           <details>
