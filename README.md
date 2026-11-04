@@ -45,7 +45,16 @@ npm run typecheck
 npm run build
 ```
 
-`npm run dev` runs Next.js only; it does not execute PHP, so appointment submission needs a separate PHP-capable deployment or the isolated test setup below. Node.js is only needed to develop and build the static site.
+For local appointment testing, install PHP 8.1+ with OpenSSL and Composer 2. In a second terminal run `npm run dev:php` to start PHP on `127.0.0.1:8000`; the Next.js development server proxies `/api/appointment.php` to it. Restart `npm run dev` after changing `next.config.ts`. Set up the private local directory (PowerShell):
+
+```powershell
+New-Item -ItemType Directory -Force dembassy-mailer
+Copy-Item server/composer.json, server/composer.lock dembassy-mailer/
+composer install --no-dev --working-dir=dembassy-mailer
+if (-not (Test-Path dembassy-mailer/config.php)) { Copy-Item server/config.example.php dembassy-mailer/config.php }
+```
+
+Only copy the example config if `dembassy-mailer/config.php` does not already exist. Set the SMTP values and a test recipient you control in that private, Git-ignored config. The PHP server and config are only for local testing; production still serves the static export through PHP hosting. Never commit or share the config or credentials.
 
 The deployable static files are in `out/`. Set `NEXT_PUBLIC_SITE_URL` at build time to the confirmed production origin. The current default is `https://dembassy.ky` and should be confirmed before launch. Canonical URLs, the sitemap, robots rules, and structured data use this origin.
 
