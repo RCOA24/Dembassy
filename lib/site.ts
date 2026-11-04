@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import services from "./services.json";
+import services from "../public/api/services.json";
 
 export { services };
 export const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://dembassy.ky";

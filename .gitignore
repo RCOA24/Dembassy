@@ -6,4 +6,6 @@ out/
 *.tsbuildinfo
 .env*
 server/vendor/
+server/config.php
+dembassy-mailer/
 FILE_MANIFEST.json
