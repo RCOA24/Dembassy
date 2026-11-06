@@ -37,9 +37,10 @@ function readOptions(string $file): array
 function reserveAttempt(string $file, string $ip): void
 {
     $handle = @fopen($file, 'c+');
-    if ($handle === false || !@flock($handle, LOCK_EX)) {
-        if (is_resource($handle)) fclose($handle);
-        unavailable('rate limit storage unavailable');
+    if ($handle === false) unavailable('rate limit storage open failed');
+    if (!@flock($handle, LOCK_EX)) {
+        fclose($handle);
+        unavailable('rate limit storage lock failed');
     }
     @chmod($file, 0600);
     $raw = stream_get_contents($handle, 32769);
@@ -143,18 +144,23 @@ if (!$preferred || $preferred->format('Y-m-d') !== $date || $preferred < new Dat
 }
 
 // Only REMOTE_ADDR is trusted. Forwarded headers can be supplied by clients.
-$privateDir = dirname(__DIR__, 2) . '/dembassy-mailer';
+$privateDir = dirname(__DIR__, 3) . '/dembassy-mailer';
+if (!is_dir($privateDir)) unavailable('rate limit private directory missing');
 reserveAttempt($privateDir . '/rate-limit.json', $_SERVER['REMOTE_ADDR'] ?? 'unknown');
 
 $config = [];
 $configFile = $privateDir . '/config.php';
 if (is_file($configFile)) {
+    if (!is_readable($configFile)) unavailable('private configuration unreadable');
     try {
         $config = require $configFile;
         if (!is_array($config)) unavailable('private configuration invalid');
     } catch (Throwable $error) {
         unavailable('private configuration could not be loaded');
     }
+} else {
+    // Environment variables can supply all configuration without a file.
+    error_log('Appointment endpoint: private configuration file missing; checking environment');
 }
 $getConfig = static function (string $key, string $default = '') use ($config): string {
     $environment = getenv($key);
@@ -170,17 +176,27 @@ $from = $getConfig('SMTP_FROM');
 $to = $getConfig('APPOINTMENT_TO', 'admin@dembassy.ky');
 $port = filter_var($getConfig('SMTP_PORT', '587'), FILTER_VALIDATE_INT);
 $encryption = $getConfig('SMTP_ENCRYPTION', 'tls');
-if (!is_file($autoload) || $host === '' || preg_match('/[\s\x00-\x1f\x7f]/', $host) ||
+if (!is_file($autoload) || !is_readable($autoload)) unavailable('mail dependency missing or unreadable');
+if ($host === '' || preg_match('/[\s\x00-\x1f\x7f]/', $host) ||
     $username === '' || $password === '' || !filter_var($from, FILTER_VALIDATE_EMAIL) ||
     !filter_var($to, FILTER_VALIDATE_EMAIL) || !$port || $port < 1 || $port > 65535 ||
     !in_array($encryption, ['tls', 'ssl'], true)) {
-    unavailable('mailer configuration invalid or autoloader missing');
+    unavailable('mailer configuration invalid');
 }
 
+$smtpStage = 'setup';
 try {
     require_once $autoload;
+    if (!class_exists(PHPMailer::class)) unavailable('mail dependency invalid');
     $mail = new PHPMailer(true);
     $mail->isSMTP();
+    // Temporary diagnostics: retain only fixed stage labels, never SMTP traffic.
+    $mail->SMTPDebug = 1;
+    $mail->Debugoutput = static function ($line, $level) use (&$smtpStage): void {
+        if (strpos($line, 'CLIENT -> SERVER: STARTTLS') === 0) $smtpStage = 'tls';
+        elseif (strpos($line, 'CLIENT -> SERVER: AUTH ') === 0) $smtpStage = 'authentication';
+        elseif (strpos($line, 'CLIENT -> SERVER: MAIL FROM:') === 0) $smtpStage = 'message submission';
+    };
     $mail->Host = $host;
     $mail->SMTPAuth = true;
     $mail->Username = $username;
@@ -201,8 +217,9 @@ try {
         'Message:', $message !== '' ? $message : '(none)', '',
         'The team will reply to confirm availability.',
     ]);
+    $smtpStage = 'connection or implicit TLS';
     $mail->send();
     respond(200, 'Your request was sent.');
 } catch (Throwable $error) {
-    unavailable('SMTP delivery failed');
+    unavailable('SMTP delivery failed; stage: ' . $smtpStage);
 }

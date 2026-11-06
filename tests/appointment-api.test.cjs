@@ -35,7 +35,7 @@ async function freePort() {
 
 test('appointment PHP endpoint', async (t) => {
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'dembassy-api-test-'));
-  const web = path.join(temp, 'public_html');
+  const web = path.join(temp, 'public_html', 'dembassy.ky');
   const api = path.join(web, 'api');
   const privateDir = path.join(temp, 'dembassy-mailer');
   const modeFile = path.join(temp, 'mode');
